@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Frontend</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .log {
+            background-color: #000;
+            color: #00ff00;
+            padding: 10px;
+            border-radius: 3px;
+            font-family: monospace;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Frontend E-Commerce</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: API Produits (Backend)</h2>
+        <button onclick="testBackendAPI()">Tester API Backend</button>
+        <div id="backend-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Simulation Frontend</h2>
+        <button onclick="testFrontendCall()">Simuler Appel Frontend</button>
+        <div id="frontend-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Vérification CORS</h2>
+        <button onclick="testCORS()">Tester CORS</button>
+        <div id="cors-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 4: Affichage des Produits</h2>
+        <button onclick="displayProducts()">Afficher Produits</button>
+        <div id="products-display"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📝 Console JavaScript</h2>
+        <div id="console-log" class="log"></div>
+        <button onclick="clearConsole()">Vider Console</button>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8085/api/products';
+        let consoleLog = document.getElementById('console-log');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] ${message}`;
+            console.log(logMessage);
+            
+            consoleLog.innerHTML += logMessage + '\n';
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+        }
+
+        function showResult(elementId, message, isSuccess = true) {
+            const element = document.getElementById(elementId);
+            const className = isSuccess ? 'success' : 'error';
+            element.innerHTML = `<div class="${className}">${message}</div>`;
+        }
+
+        async function testBackendAPI() {
+            try {
+                log('🔍 Test API Backend...');
+                showResult('backend-result', 'Test en cours...', true);
+                
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                
+                log(`✅ API Backend OK: ${data.length} produits trouvés`);
+                showResult('backend-result', `✅ Succès! ${data.length} produits trouvés`, true);
+                
+                return data;
+            } catch (error) {
+                log(`❌ Erreur API Backend: ${error.message}`);
+                showResult('backend-result', `❌ Erreur: ${error.message}`, false);
+                return null;
+            }
+        }
+
+        async function testFrontendCall() {
+            try {
+                log('🌐 Simulation appel Frontend...');
+                showResult('frontend-result', 'Test en cours...', true);
+                
+                // Simule exactement ce que fait le frontend React
+                const response = await fetch('http://localhost:8085/api/products');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                log(`✅ Appel Frontend OK: ${data.length} produits`);
+                showResult('frontend-result', `✅ Succès! ${data.length} produits chargés`, true);
+                
+                return data;
+            } catch (error) {
+                log(`❌ Erreur Appel Frontend: ${error.message}`);
+                showResult('frontend-result', `❌ Erreur: ${error.message}`, false);
+                return null;
+            }
+        }
+
+        async function testCORS() {
+            try {
+                log('🔒 Test CORS...');
+                showResult('cors-result', 'Test CORS en cours...', true);
+                
+                const response = await fetch(API_URL, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Origin': 'http://localhost:3000'
+                    },
+                    mode: 'cors'
+                });
+                
+                const data = await response.json();
+                
+                log(`✅ CORS OK: ${data.length} produits`);
+                showResult('cors-result', `✅ CORS fonctionne! ${data.length} produits`, true);
+                
+            } catch (error) {
+                log(`❌ Erreur CORS: ${error.message}`);
+                showResult('cors-result', `❌ Erreur CORS: ${error.message}`, false);
+            }
+        }
+
+        async function displayProducts() {
+            try {
+                log('📦 Affichage des produits...');
+                
+                const response = await fetch(API_URL);
+                const products = await response.json();
+                
+                let html = '<div class="success">Produits chargés avec succès!</div>';
+                html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">';
+                
+                products.forEach(product => {
+                    html += `
+                        <div style="border: 1px solid #ddd; padding: 15px; border-radius: 5px;">
+                            <h3>${product.nom}</h3>
+                            <p><strong>ID:</strong> ${product.id}</p>
+                            <p><strong>Prix:</strong> ${product.prix} DH</p>
+                            <p><strong>Stock:</strong> ${product.stock}</p>
+                            <p><strong>Description:</strong> ${product.description.substring(0, 100)}...</p>
+                            <button onclick="addToCart(${product.id}, '${product.nom}', ${product.prix})" style="background-color: #28a745;">
+                                🛒 Ajouter au panier
+                            </button>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+                
+                document.getElementById('products-display').innerHTML = html;
+                log(`✅ ${products.length} produits affichés`);
+                
+            } catch (error) {
+                log(`❌ Erreur affichage: ${error.message}`);
+                showResult('products-display', `❌ Erreur: ${error.message}`, false);
+            }
+        }
+
+        async function addToCart(productId, productName, price) {
+            try {
+                log(`🛒 Ajout au panier: ${productName}`);
+                
+                const response = await fetch('http://localhost:8082/api/simple-cart/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        userId: 19,
+                        productId: productId,
+                        productName: productName,
+                        price: price,
+                        quantity: 1
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    log(`✅ ${productName} ajouté au panier!`);
+                    alert(`${productName} ajouté au panier!`);
+                } else {
+                    log(`❌ Erreur panier: ${result.message}`);
+                    alert(`Erreur: ${result.message}`);
+                }
+                
+            } catch (error) {
+                log(`❌ Erreur ajout panier: ${error.message}`);
+                alert(`Erreur: ${error.message}`);
+            }
+        }
+
+        function clearConsole() {
+            consoleLog.innerHTML = '';
+            log('🧹 Console vidée');
+        }
+
+        // Initialisation
+        window.onload = function() {
+            log('🚀 Page de debug chargée');
+            log('📍 URL API: ' + API_URL);
+            log('📍 URL Frontend: http://localhost:3000');
+        };
+    </script>
+</body>
+</html>

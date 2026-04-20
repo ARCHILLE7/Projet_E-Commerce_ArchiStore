@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API Produits</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .products-list {
+            margin-top: 20px;
+        }
+        .product-item {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 3px;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test API Produits E-Commerce</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Appel direct à l'API</h2>
+        <button onclick="testDirectAPI()">Tester API Produits</button>
+        <div id="direct-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Appel avec CORS</h2>
+        <button onclick="testCORS()">Tester avec CORS</button>
+        <div id="cors-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Vérification des produits</h2>
+        <button onclick="loadProducts()">Charger les produits</button>
+        <div id="products-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Informations de configuration</h2>
+        <p><strong>URL API Produits:</strong> <span id="api-url">http://localhost:8085/api/products</span></p>
+        <p><strong>URL Frontend:</strong> <span id="frontend-url">http://localhost:3000</span></p>
+        <p><strong>Statut:</strong> <span id="status">En attente...</span></p>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8085/api/products';
+        
+        function updateStatus(message, isSuccess = true) {
+            const statusElement = document.getElementById('status');
+            statusElement.textContent = message;
+            statusElement.style.color = isSuccess ? 'green' : 'red';
+        }
+
+        function showResult(elementId, message, isSuccess = true) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="${isSuccess ? 'success' : 'error'}">${message}</div>`;
+        }
+
+        function showProducts(elementId, products) {
+            const element = document.getElementById(elementId);
+            let html = '<div class="success">Produits chargés avec succès!</div>';
+            html += '<div class="products-list">';
+            
+            products.forEach(product => {
+                html += `
+                    <div class="product-item">
+                        <h3>${product.nom}</h3>
+                        <p><strong>ID:</strong> ${product.id}</p>
+                        <p><strong>Prix:</strong> ${product.prix} DH</p>
+                        <p><strong>Description:</strong> ${product.description}</p>
+                        <p><strong>Stock:</strong> ${product.stock}</p>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            html += `<pre>${JSON.stringify(products, null, 2)}</pre>`;
+            element.innerHTML = html;
+        }
+
+        async function testDirectAPI() {
+            try {
+                updateStatus('Test direct en cours...', true);
+                showResult('direct-result', 'Test en cours...', true);
+                
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('direct-result', `Succès! ${data.length} produits trouvés.`, true);
+                    updateStatus('API accessible directement', true);
+                } else {
+                    showResult('direct-result', `Erreur: ${response.status} ${response.statusText}`, false);
+                    updateStatus('API non accessible', false);
+                }
+            } catch (error) {
+                showResult('direct-result', `Erreur: ${error.message}`, false);
+                updateStatus('Erreur de connexion', false);
+            }
+        }
+
+        async function testCORS() {
+            try {
+                updateStatus('Test CORS en cours...', true);
+                showResult('cors-result', 'Test en cours...', true);
+                
+                const response = await fetch(API_URL, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Origin': 'http://localhost:3000'
+                    },
+                    mode: 'cors'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('cors-result', `Succès! CORS fonctionne. ${data.length} produits trouvés.`, true);
+                    updateStatus('CORS OK', true);
+                } else {
+                    showResult('cors-result', `Erreur CORS: ${response.status} ${response.statusText}`, false);
+                    updateStatus('Problème CORS', false);
+                }
+            } catch (error) {
+                showResult('cors-result', `Erreur CORS: ${error.message}`, false);
+                updateStatus('Erreur CORS', false);
+            }
+        }
+
+        async function loadProducts() {
+            try {
+                updateStatus('Chargement des produits...', true);
+                showResult('products-result', 'Chargement en cours...', true);
+                
+                const response = await fetch(API_URL, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    mode: 'cors'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showProducts('products-result', data);
+                    updateStatus(`${data.length} produits chargés`, true);
+                } else {
+                    showResult('products-result', `Erreur: ${response.status} ${response.statusText}`, false);
+                    updateStatus('Erreur de chargement', false);
+                }
+            } catch (error) {
+                showResult('products-result', `Erreur: ${error.message}`, false);
+                updateStatus('Erreur de connexion', false);
+            }
+        }
+
+        // Test automatique au chargement
+        window.onload = function() {
+            console.log('Page de test chargée');
+            updateStatus('Prêt pour les tests', true);
+        };
+    </script>
+</body>
+</html>
